@@ -25,20 +25,25 @@ class Chef
     class Hoptoad < ::Chef::Handler
 
       def initialize(config={})
-        super(config)
-        @config[:api_key] = config[:api_key]
+        @config= config
       end
 
-      def report(node, runner, start_time, end_time, elapsed_time, exception)
+      def report
         if exception
           Chef::Log.error("Creating Hoptoad exception report")
-          data = build_report_data(node, runner, start_time, end_time, elapsed_time, exception)
-          Toadhopper(config[:api_key]).post!(
+          Toadhopper(@config[:api_key]).post!(
             exception, 
             { 
               :component => node ? node.name : `hostname`,
               :action => "run",
-              :params => data
+              :framework_env => 'production',
+              :params => {
+                :node=> node, 
+                :run_context=> run_context, 
+                :start_time=> start_time, 
+                :end_time=> end_time, 
+                :elapsed_time=> elapsed_time                
+              }
             }
           )
         end
@@ -47,4 +52,3 @@ class Chef
     end
   end
 end
-
